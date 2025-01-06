@@ -1,0 +1,104 @@
+---
+title: "Diya Mistry Study of R^2 Statistic"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+
+# Background
+
+### I will be studying how the sampling distribution of the $R^2$ statistic is impacted as the number of predictors increases.
+
+Throughout ST362, we have looked at the coefficient of determination, $R^2$, which measures the percent of variation explained by the regression model:
+
+$$
+R^2 = \frac{SS_{Reg}}{SS_{T}} = 1- \frac{SS_{E}}{SS_{T}}=\frac{S_{XY}^2}{S_{XX}S_{YY}}
+$$
+
+Where $SS_{reg}$ represents the variance of the line around the mean of $\underline{y}$, $SS_{E}$ represents the variation in the data that the model does not explain, and $SS_{T}$ represents the total variation in the data around its mean.
+
+The 0 to 1 scale of the $R^2$ statistic plays a crucial role in evaluating the fit of a model, where a low value indicates that the variance in the dependent variable is not explained much by the model. Conversely, a high score may suggest an improved model fit and a greater amount of variance in the dependent variable explained by the model, thus offering benefits such as the ability to predict dependent variables. However, this is not always the case.
+
+In ST362 we learned that by adding additional predictors to the model, $R^2$ will continue to increase even if the predictors are not significant. In other words, even if $R^2$ is high, this does not always indicate a good fit, and may even be overfitting (["where a statistical model begins to describe the random error in the data rather than the relationships between variables."](https://statisticsbyjim.com/regression/r-squared-too-high/)) To account for this, we looked at Adjusted $R^2$:
+
+$$
+R_a^2 = 1-(1-R^2)\frac{n-1}{n-p}
+$$
+
+Using this adjusted version, we ensure that by adding predictors, our statistic will not always increase unnecessarily. Although this may not be effective for comparing different models on different data, we learned to generally use $R_a^2$ rather than $R^2$.
+
+# Goal
+
+My goal is to determine how an increase in the number of predictors may impact \$R\^2\$. Since adding predictors can explain more variation in the model, I expect to see a decrease in $SS_E$ and no change in $SS_T$, thus increasing the $R^2$ statistic.
+
+Mathematically, I will perform a simulation which studies changes to $R^2$ as more predictors are added to the model.
+
+I will run a simulation by fitting basic linear regression models with an increasing number of predictors. By calculating and visualizing the $R^2$ and $R_a^2$ statistics using line graphs, I will be able to visualize the relationship between the statistics and number of predictors.
+
+# Simulation
+
+### Assumptions: linear regression assumptions
+
+1.  Linear relationship between predictors and dependent variables
+
+2.  Normally distributed residuals
+
+3.  Constant variance
+
+4.  Independent residuals
+
+5.  Each predictor follows standard normal distribution
+
+### Parameters
+
+-   Predictor values range according to a standard normal distribution (rnorm)
+
+-   Sample size $n=10$ is enough to demonstrate the impact on $R^2$ and $R_a^2$
+
+Code references Course Notes Appendix D.2
+
+```{r}
+n <- 10
+
+# Generate predictors
+predictors <- matrix(rnorm(50*(n + 1)), nrow = 50, ncol = n + 1)
+colnames(predictors) <- c("y", paste0("x", 1:n))
+predictors <- as.data.frame(predictors)
+
+r_squares <- numeric()
+adj_r_squares <- numeric()
+
+# Calculate R^2 and adjusted R^2
+for (i in 2:(n + 1)) { 
+    model <- lm(y ~ ., data = predictors[,1:i])
+    r_squares[i - 1] <- summary(model)$r.squared
+    adj_r_squares[i - 1] <- summary(model)$adj.r.squared
+}
+
+# Plot line graph of R^2 and adjusted R^2
+plot(1:n, r_squares, type = "b", col = "pink",
+     xlab = "Number of Uncorrelated Predictors",
+     ylab = "R^2 and Adjusted R^2 Values",
+     main = "Impact of Adding Predictors on R^2 and Adjusted R^2",
+     ylim = c(min(adj_r_squares), max(r_squares, adj_r_squares)))
+lines(1:n, adj_r_squares, type = "b", col = "purple")
+legend("topleft", legend = c("R^2", "Adjusted R^2"),
+       col = c("pink", "purple"))
+
+```
+
+### Conclusion
+
+Based on the results of the above simulation, it is evident that as number of predictors increase, $R^2$ increases, and $R_a^2$ remains relatively steady. With each increase in predictors, we see that $R^2$ increases, whereas this is not the case with $R_a^2$. In fact, we see that it decreases at some points (ex. between and 3 and 4 predictors). Based on our knowledge of these statistics, we know that $R^2$ would inaccurately tell us that a greater amount of variance in the dependent variable is explained by the model, when it is really overfitting. $R_a^2$ challenges this by adjusting for the number of predictors.
+
+### Limitations
+
+I believe the primary limitation in my simulation is the assumption of normally distributed predictors. Using a normal distribution for predictors confirms that $R^2$ will always increase as more predictors are added, however this may not always be suitable for real-life applications which might follow other distributions, and will change the results of the statistics.
+
+# Reflection
+
+### Learning Outcomes
+
+As I mentioned before, I was interested in observing the fit of models. Through this simulation, I was able to delve into the importance of designing a model with the appropriate number of predictors, and the consequences of having too many (overfitting). Prior to this simulation, I did not have a strong understanding of the exact purpose of $R_a^2$ and even thought it was just a slow growing version of $R^2$, but I was wrong! I know understand the importance of $R_a^2$ in ensuring unnecessary predictors do not lead to continuous increasing and overfitting.
